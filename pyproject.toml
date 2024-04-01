@@ -20,6 +20,8 @@ dependencies = [
     "types-requests>=2.31.0.20240311",
     "pandas-stubs>=2.2.1.240316",
     "types-beautifulsoup4>=4.12.0.20240229",
+    "scipy>=1.12.0",
+    "matplotlib>=3.8.3",
 ]
 
 

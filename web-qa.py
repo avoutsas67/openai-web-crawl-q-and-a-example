@@ -3,7 +3,7 @@
 ###############################################################################
 # %% [markdown]
 # # Web QA with OpenAI
-# ## Step 1
+# ## Initial Setup
 # %%    
 import re
 import urllib.request
@@ -18,8 +18,8 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import tiktoken #type: ignore
-import openai #type: ignore
 import numpy as np #type: ignore
+from scipy.spatial.distance import cosine #type: ignore
 from openai import __version__ as openai_version #type: ignore
 from openai import OpenAI #type: ignore
 #from openai.embeddings_utils import distances_from_embeddings, cosine_similarity #type: ignore
@@ -30,12 +30,11 @@ print(f"Python version: {sys.version}")
 print(f"OpenAI version: {openai_version}")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-# %%
 client = OpenAI()
 
+# %% [markdown]
+# ## Scraping the Web
 # %%
-
 # Regex pattern to match a URL
 HTTP_URL_PATTERN = r'^http[s]{0,1}://.+$'
 
@@ -71,6 +70,7 @@ def get_hyperlinks(url):
         with urllib.request.urlopen(url) as response:
 
             # If the response is not HTML, return an empty list
+            # ~~~~~~~
             if not response.info().get('Content-Type').startswith("text/html"):
                 return []
             
@@ -221,8 +221,9 @@ df['text'] = df.fname + ". " + remove_newlines(df.text)
 df.to_csv('processed/scraped.csv')
 df.head()
 
+# %% [markdown]
+# ## Embedding the Text
 # %%
-
 ################################################################################
 ### Step 7
 ################################################################################
@@ -317,7 +318,21 @@ df.n_tokens.hist()
 # Note that you may run into rate limit issues depending on how many files you try to embed
 # Please check out our rate limit guide to learn more on how to handle this: https://platform.openai.com/docs/guides/rate-limits
 
-df['embeddings'] = df.text.apply(lambda x: client.embeddings.create(input=x, model='text-embedding-ada-002')['data'][0]['embedding'])
+
+# %%
+def get_embedding(text):
+    embedding = None
+    try:
+        response = client.embeddings.create(input=text, 
+        model='text-embedding-ada-002')
+        embedding = response.data[0].embedding
+    except TypeError as e:
+        print(f"TypeError: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
+    return embedding
+
+df['embeddings'] = df.text.apply(get_embedding)
 df.to_csv('processed/embeddings.csv')
 df.head()
 
@@ -342,11 +357,11 @@ def create_context(
     """
 
     # Get the embeddings for the question
-    q_embeddings = openai.Embedding.create(input=question, engine='text-embedding-ada-002')['data'][0]['embedding']
+    q_embeddings = client.embeddings.create(input=question, engine='text-embedding-ada-002')['data'][0]['embedding']
 
     # Get the distances from the embeddings
-    df['distances'] = distances_from_embeddings(q_embeddings, df['embeddings'].values, distance_metric='cosine')
-
+    # df['distances'] = distances_from_embeddings(q_embeddings, df['embeddings'].values, distance_metric='cosine')
+    df["distances"] = df["embeddings"].apply(lambda x: cosine(q_embeddings, x))
 
     returns = []
     cur_len = 0
@@ -393,17 +408,15 @@ def answer_question(
 
     try:
         # Create a completions using the questin and context
-        response = openai.Completion.create(
-            prompt=f"Answer the question based on the context below, and if the question can't be answered based on the context, say \"I don't know\"\n\nContext: {context}\n\n---\n\nQuestion: {question}\nAnswer:",
-            temperature=0,
-            max_tokens=max_tokens,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0,
-            stop=stop_sequence,
-            model=model,
-        )
-        return response["choices"][0]["text"].strip()
+        response = client.completions.create(prompt=f"Answer the question based on the context below, and if the question can't be answered based on the context, say \"I don't know\"\n\nContext: {context}\n\n---\n\nQuestion: {question}\nAnswer:",
+        temperature=0,
+        max_tokens=max_tokens,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+        stop=stop_sequence,
+        model=model)
+        return response.choices[0].text.strip()
     except Exception as e:
         print(e)
         return ""
@@ -415,3 +428,5 @@ def answer_question(
 print(answer_question(df, question="What day is it?", debug=False))
 
 print(answer_question(df, question="What is our newest embeddings model?"))
+
+# %%
