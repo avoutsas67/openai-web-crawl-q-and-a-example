@@ -1,27 +1,43 @@
-################################################################################
+###############################################################################
 ### Step 1
-################################################################################
-
-import requests
+###############################################################################
+# %% [markdown]
+# # Web QA with OpenAI
+# ## Step 1
+# %%    
 import re
 import urllib.request
-from bs4 import BeautifulSoup
 from collections import deque
 from html.parser import HTMLParser
 from urllib.parse import urlparse
 import os
-import pandas as pd
-import tiktoken
-import openai
-import numpy as np
-from openai.embeddings_utils import distances_from_embeddings, cosine_similarity
+import sys
 from ast import literal_eval
+from dotenv import load_dotenv, find_dotenv
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import tiktoken #type: ignore
+import openai #type: ignore
+import numpy as np #type: ignore
+from openai import __version__ as openai_version #type: ignore
+from openai import OpenAI #type: ignore
+#from openai.embeddings_utils import distances_from_embeddings, cosine_similarity #type: ignore
+
+# Load environment variables
+_ = load_dotenv(find_dotenv()) # read local .env file
+print(f"Python version: {sys.version}")
+print(f"OpenAI version: {openai_version}")
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# %%
+client = OpenAI()
+
+# %%
 
 # Regex pattern to match a URL
 HTTP_URL_PATTERN = r'^http[s]{0,1}://.+$'
-
-# Define OpenAI api_key
-# openai.api_key = '<Your API Key>'
 
 # Define root domain to crawl
 domain = "openai.com"
@@ -205,6 +221,8 @@ df['text'] = df.fname + ". " + remove_newlines(df.text)
 df.to_csv('processed/scraped.csv')
 df.head()
 
+# %%
+
 ################################################################################
 ### Step 7
 ################################################################################
@@ -299,7 +317,7 @@ df.n_tokens.hist()
 # Note that you may run into rate limit issues depending on how many files you try to embed
 # Please check out our rate limit guide to learn more on how to handle this: https://platform.openai.com/docs/guides/rate-limits
 
-df['embeddings'] = df.text.apply(lambda x: openai.Embedding.create(input=x, engine='text-embedding-ada-002')['data'][0]['embedding'])
+df['embeddings'] = df.text.apply(lambda x: client.embeddings.create(input=x, model='text-embedding-ada-002')['data'][0]['embedding'])
 df.to_csv('processed/embeddings.csv')
 df.head()
 

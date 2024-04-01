@@ -1,0 +1,34 @@
+[project]
+name = "openai-web-crawl-q-and-a-example"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Achilleas Voutsas", email = "achilleas.voutsas@ema.europa.eu"},
+]
+
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+dependencies = [
+    "python-dotenv>=1.0.1",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.3",
+    "tiktoken>=0.6.0",
+    "openai>=1.14.3",
+    "numpy>=1.26.4",
+    "pandas>=2.2.1",
+    "types-requests>=2.31.0.20240311",
+    "pandas-stubs>=2.2.1.240316",
+    "types-beautifulsoup4>=4.12.0.20240229",
+]
+
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "wheel>=0.43.0",
+    "ipykernel>=6.29.4",
+    "mypy>=1.9.0",
+]
