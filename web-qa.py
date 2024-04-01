@@ -17,6 +17,7 @@ from dotenv import load_dotenv, find_dotenv
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+from pandas import Index
 import tiktoken #type: ignore
 import numpy as np #type: ignore
 from scipy.spatial.distance import cosine #type: ignore
@@ -232,7 +233,7 @@ df.head()
 tokenizer = tiktoken.get_encoding("cl100k_base")
 
 df = pd.read_csv('processed/scraped.csv', index_col=0)
-df.columns = ['title', 'text']
+df.columns = Index(['title', 'text'], dtype='object')
 
 # Tokenize the text and save the number of tokens to a new column
 df['n_tokens'] = df.text.apply(lambda x: len(tokenizer.encode(x)))
