@@ -340,7 +340,7 @@ df.head()
 ################################################################################
 ### Step 11
 ################################################################################
-
+# %%
 df=pd.read_csv('processed/embeddings.csv', index_col=0)
 df['embeddings'] = df['embeddings'].apply(literal_eval).apply(np.array)
 
@@ -349,6 +349,7 @@ df.head()
 ################################################################################
 ### Step 12
 ################################################################################
+# %%
 
 def create_context(
     question, df, max_len=1800, size="ada"
@@ -358,8 +359,8 @@ def create_context(
     """
 
     # Get the embeddings for the question
-    q_embeddings = client.embeddings.create(input=question, engine='text-embedding-ada-002')['data'][0]['embedding']
-
+    response_q_embedding = client.embeddings.create(input=question, model='text-embedding-ada-002')
+    q_embeddings = response_q_embedding.data[0].embedding
     # Get the distances from the embeddings
     # df['distances'] = distances_from_embeddings(q_embeddings, df['embeddings'].values, distance_metric='cosine')
     df["distances"] = df["embeddings"].apply(lambda x: cosine(q_embeddings, x))
@@ -385,7 +386,7 @@ def create_context(
 
 def answer_question(
     df,
-    model="text-davinci-003",
+    model="gpt-3.5-turbo-instruct",
     question="Am I allowed to publish model outputs to Twitter, without a human review?",
     max_len=1800,
     size="ada",
